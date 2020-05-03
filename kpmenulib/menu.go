@@ -54,6 +54,23 @@ func (m *Menu) OpenDatabase() *ErrorDatabase {
 
 	// Open database
 	if err := m.Database.OpenDatabase(m.Configuration); err != nil {
+		if m.Configuration.General.ShowNotifications {
+			notifySend, _ := exec.LookPath("notify-send")
+			cmd := &exec.Cmd {
+				Path: notifySend,
+					Args: []string{
+						notifySend,
+						"Failed to open database",
+						err.Error(),
+						"-u", "normal",
+						"-t", "3000",
+						"-i", "gtk-dialog-error",
+					},
+					Stdout: os.Stdout,
+					Stderr: os.Stderr,
+				}
+			cmd.Run()
+		}
 		return NewErrorDatabase("failed to open database: %s", err, true)
 	}
 

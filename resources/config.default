@@ -7,6 +7,7 @@ ClipboardTimeout = 15
 NoCache = false
 CacheOneTime = false
 CacheTimeout = 60
+ShowNotifications = false
 
 [style]
 PasswordBackground = "black"
