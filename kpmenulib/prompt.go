@@ -60,7 +60,7 @@ func PromptPassword(menu *Menu) (string, ErrorPrompt) {
 
 	// Add custom arguments
 	if menu.Configuration.Style.ArgsPassword != "" {
-		command = append(command, strings.Split(menu.Configuration.Style.ArgsPassword, " ")...)
+		command = append(command, strings.Split(menu.Configuration.Style.ArgsPassword, "|")...)
 	}
 
 	// Execute prompt
@@ -92,7 +92,7 @@ func PromptMenu(menu *Menu) (MenuSelection, ErrorPrompt) {
 
 	// Add custom arguments
 	if menu.Configuration.Style.ArgsMenu != "" {
-		command = append(command, strings.Split(menu.Configuration.Style.ArgsMenu, " ")...)
+		command = append(command, strings.Split(menu.Configuration.Style.ArgsMenu, "|")...)
 	}
 
 	// Prepare input (dmenu items)
@@ -140,7 +140,7 @@ func PromptEntries(menu *Menu) (*Entry, ErrorPrompt) {
 
 	// Add custom arguments
 	if menu.Configuration.Style.ArgsEntry != "" {
-		command = append(command, strings.Split(menu.Configuration.Style.ArgsEntry, " ")...)
+		command = append(command, strings.Split(menu.Configuration.Style.ArgsEntry, "|")...)
 	}
 
 	// Prepare a list of entries
@@ -216,7 +216,7 @@ func PromptFields(menu *Menu, entry *Entry) (string, ErrorPrompt) {
 
 	// Add custom arguments
 	if menu.Configuration.Style.ArgsField != "" {
-		command = append(command, strings.Split(menu.Configuration.Style.ArgsField, " ")...)
+		command = append(command, strings.Split(menu.Configuration.Style.ArgsField, "|")...)
 	}
 
 	fields := []string{}
