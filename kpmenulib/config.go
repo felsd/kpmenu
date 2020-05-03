@@ -20,12 +20,13 @@ type Configuration struct {
 
 // ConfigurationGeneral is the sub-structure of the configuration related to general kpmenu settings
 type ConfigurationGeneral struct {
-	UseRofi          bool   // Use Rofi instead of dmenu
-	ClipboardTool    string // Clipboard tool to use
-	ClipboardTimeout int    // Clipboard timeout before clean it
-	NoCache          bool   // Flag to do not cache master password
-	CacheOneTime     bool   // Cache the password only the first time you write it
-	CacheTimeout     int    // Timeout of cache
+	UseRofi           bool   // Use Rofi instead of dmenu
+	ClipboardTool     string // Clipboard tool to use
+	ClipboardTimeout  int    // Clipboard timeout before clean it
+	NoCache           bool   // Flag to do not cache master password
+	CacheOneTime      bool   // Cache the password only the first time you write it
+	CacheTimeout      int    // Timeout of cache
+	ShowNotifications bool   // Flag for showing desktop notifications
 }
 
 // ConfigurationStyle is the sub-structure of the configuration related to style of dmenu
@@ -68,9 +69,10 @@ const (
 func NewConfiguration() *Configuration {
 	return &Configuration{
 		General: ConfigurationGeneral{
-			ClipboardTool:    ClipboardToolXsel,
-			ClipboardTimeout: 15,
-			CacheTimeout:     60,
+			ClipboardTool:     ClipboardToolXsel,
+			ClipboardTimeout:  15,
+			CacheTimeout:      60,
+			ShowNotifications: false,
 		},
 		Style: ConfigurationStyle{
 			PasswordBackground: "black",
@@ -116,6 +118,7 @@ func (c *Configuration) LoadConfig() error {
 
 // InitializeFlags prepare cli flags
 func (c *Configuration) InitializeFlags() {
+	fmt.Println("AAAAAA")
 	// Flags
 	flag.BoolVar(&c.Flags.Daemon, "daemon", false, "Start kpmenu directly as daemon")
 	flag.BoolVarP(&c.Flags.Version, "version", "v", false, "Show kpmenu version")
@@ -127,6 +130,7 @@ func (c *Configuration) InitializeFlags() {
 	flag.BoolVarP(&c.General.NoCache, "nocache", "n", c.General.NoCache, "Disable caching of database")
 	flag.BoolVar(&c.General.CacheOneTime, "cacheOneTime", c.General.CacheOneTime, "Cache the database only the first time")
 	flag.IntVar(&c.General.CacheTimeout, "cacheTimeout", c.General.CacheTimeout, "Timeout of cache in seconds")
+	flag.BoolVar(&c.General.ShowNotifications, "showNotifications", c.General.ShowNotifications, "Show desktop notifications")
 
 	// Style
 	flag.StringVar(&c.Style.PasswordBackground, "passwordBackground", c.Style.PasswordBackground, "Color of dmenu background and text for password selection, used to hide password typing")

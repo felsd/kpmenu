@@ -3,6 +3,7 @@ package kpmenulib
 import (
 	"bytes"
 	"log"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -77,6 +78,23 @@ func CleanClipboard(menu *Menu, text string) {
 					if err = cmd.Run(); err != nil {
 						log.Printf("failed to clean '%s' clipboard: %s", menu.Configuration.General.ClipboardTool, err)
 					} else {
+						if menu.Configuration.General.ShowNotifications {
+							notifySend, _ := exec.LookPath("notify-send")
+							cmd := &exec.Cmd {
+								Path: notifySend,
+									Args: []string{
+										notifySend,
+										"KeePass",
+										"Clipboard cleared",
+										"-u", "normal",
+										"-t", "3000",
+										"-i", "gtk-dialog-info",
+									},
+									Stdout: os.Stdout,
+									Stderr: os.Stderr,
+								}
+							cmd.Run()
+						}
 						log.Printf("cleaned clipboard")
 					}
 				} else {

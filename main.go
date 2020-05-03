@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/AlessioDP/kpmenu/kpmenulib"
+	"github.com/felsd/kpmenu/kpmenulib"
 )
 
 func main() {

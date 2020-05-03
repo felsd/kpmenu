@@ -6,6 +6,7 @@ import (
 	"os"
 	"sync"
 	"time"
+	"os/exec"
 )
 
 // Menu is the main structure of kpmenu
@@ -124,6 +125,24 @@ func (m *Menu) entrySelection() *ErrorDatabase {
 	// Copy to clipboard
 	if err := CopyToClipboard(m, fieldValue); err != nil {
 		return NewErrorDatabase("failed to use clipboard manager to update clipboard: %s", err, true)
+	}
+
+	if m.Configuration.General.ShowNotifications {
+		notifySend, _ := exec.LookPath("notify-send")
+		cmd := &exec.Cmd {
+			Path: notifySend,
+			Args: []string{
+				notifySend,
+				"KeePass",
+				"Copied to clipboard",
+				"-u", "normal",
+				"-t", "3000",
+				"-i", "gtk-dialog-info",
+			},
+			Stdout: os.Stdout,
+			Stderr: os.Stderr,
+		}
+		cmd.Run()
 	}
 	log.Printf("copied field into the clipboard")
 

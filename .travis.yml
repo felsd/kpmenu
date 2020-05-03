@@ -1,6 +1,6 @@
 language: go
 script: make
-go_import_path: github.com/AlessioDP/kpmenu
+go_import_path: github.com/dfels/kpmenu
 go:
   - 1.10.x
   - 1.11.x
