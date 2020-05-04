@@ -6,23 +6,23 @@ ClipboardTool = "xsel"
 ClipboardTimeout = 15
 NoCache = false
 CacheOneTime = false
-CacheTimeout = 60
-ShowNotifications = false
+CacheTimeout = 3600
+ShowNotifications = true
 
 [style]
 PasswordBackground = "black"
-TextPassword = "Password"
+TextPassword = "Enter password"
 TextMenu = "Select"
 TextEntry = "Entry"
 TextField = "Field"
 FormatEntry = "{Title} - {UserName}"
-#ArgsPassword =
-#ArgsMenu =
-#ArgsEntry =
-#ArgsField =
+ArgsPassword = "-fn|'xft:SauceCodePro Nerd Font:pixelsize=20:antialias=true:hinting=true'"
+ArgsMenu = "-fn|'xft:SauceCodePro Nerd Font:pixelsize=20:antialias=true:hinting=true'"
+ArgsEntry = "-fn|'xft:SauceCodePro Nerd Font:pixelsize=20:antialias=true:hinting=true'"
+ArgsField = "-fn|'xft:SauceCodePro Nerd Font:pixelsize=20:antialias=true:hinting=true'"
 
 [database]
-#Database =
+Database = "XXX.kdbx"
 #KeyFile =
 #Password =
 FieldOrder = "Password UserName URL"
