@@ -182,17 +182,19 @@ func PromptEntries(menu *Menu) (*Entry, ErrorPrompt) {
 		listEntries = append(listEntries, entryItem{Title: title, Entry: &menu.Database.Entries[i]})
 	}
 
-	// move lastSelectedEntryItem to the beginning of the slice if set
-	if lastSelectedEntryItem.Title != "" {
-		for index, listEntry := range listEntries {
-			// delete listEntry from slice
-			if listEntry.Title == lastSelectedEntryItem.Title {
-				listEntries = append(listEntries[:index], listEntries[index+1:]...)
-				break
+	if menu.Configuration.General.RememberLastEntry {
+		// move lastSelectedEntryItem to the beginning of the slice if set
+		if lastSelectedEntryItem.Title != "" {
+			for index, listEntry := range listEntries {
+				// delete listEntry from slice
+				if listEntry.Title == lastSelectedEntryItem.Title {
+					listEntries = append(listEntries[:index], listEntries[index+1:]...)
+					break
+				}
 			}
+			// prepend listEntry
+			listEntries = append([]entryItem{lastSelectedEntryItem}, listEntries...)
 		}
-		// prepend listEntry
-		listEntries = append([]entryItem{lastSelectedEntryItem}, listEntries...)
 	}
 
 	// Prepare input (dmenu items)
@@ -207,7 +209,9 @@ func PromptEntries(menu *Menu) (*Entry, ErrorPrompt) {
 		for _, e := range listEntries {
 			if e.Title == result {
 				entry = *e.Entry
-				lastSelectedEntryItem = e
+				if menu.Configuration.General.RememberLastEntry {
+					lastSelectedEntryItem = e
+				}
 				break
 			}
 		}

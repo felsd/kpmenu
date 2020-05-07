@@ -28,6 +28,7 @@ type ConfigurationGeneral struct {
 	CacheTimeout      int    // Timeout of cache
 	ShowNotifications bool   // Flag for showing desktop notifications
 	DoNotShowMenu     bool   // Flag for skipping the menu selection
+	RememberLastEntry bool   // Remember last selected entry
 }
 
 // ConfigurationStyle is the sub-structure of the configuration related to style of dmenu
@@ -75,6 +76,7 @@ func NewConfiguration() *Configuration {
 			CacheTimeout:      60,
 			ShowNotifications: false,
 			DoNotShowMenu:     false,
+			RememberLastEntry: false,
 		},
 		Style: ConfigurationStyle{
 			PasswordBackground: "black",
@@ -133,6 +135,7 @@ func (c *Configuration) InitializeFlags() {
 	flag.IntVar(&c.General.CacheTimeout, "cacheTimeout", c.General.CacheTimeout, "Timeout of cache in seconds")
 	flag.BoolVar(&c.General.ShowNotifications, "showNotifications", c.General.ShowNotifications, "Show desktop notifications")
 	flag.BoolVar(&c.General.DoNotShowMenu, "doNotShowMenu", c.General.DoNotShowMenu, "Flag for skipping the menu selection")
+	flag.BoolVar(&c.General.RememberLastEntry, "rememberLastEntry", c.General.RememberLastEntry, "Remember last selected entry")
 
 	// Style
 	flag.StringVar(&c.Style.PasswordBackground, "passwordBackground", c.Style.PasswordBackground, "Color of dmenu background and text for password selection, used to hide password typing")

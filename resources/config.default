@@ -9,6 +9,7 @@ CacheOneTime = false
 CacheTimeout = 30
 ShowNotifications = true
 DoNotShowMenu = true
+RememberLastEntry = true
 
 [style]
 PasswordBackground = "black"
