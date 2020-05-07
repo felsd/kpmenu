@@ -29,6 +29,10 @@ type entryItem struct {
 	Entry *Entry
 }
 
+// After a value was selected, remember it and show it as
+// first entry next tim
+var lastSelectedEntryItem entryItem
+
 // ErrorPrompt is a structure that handle an error of dmenu/rofi
 type ErrorPrompt struct {
 	Cancelled bool
@@ -176,6 +180,19 @@ func PromptEntries(menu *Menu) (*Entry, ErrorPrompt) {
 		listEntries = append(listEntries, entryItem{Title: title, Entry: &menu.Database.Entries[i]})
 	}
 
+	// move lastSelectedEntryItem to the beginning of the slice if set
+	if lastSelectedEntryItem.Title != "" {
+		for index, listEntry := range listEntries {
+			// delete listEntry from slice
+			if listEntry.Title == lastSelectedEntryItem.Title {
+				listEntries = append(listEntries[:index], listEntries[index+1:]...)
+				break
+			}
+		}
+		// prepend listEntry
+		listEntries = append([]entryItem{lastSelectedEntryItem}, listEntries...)
+	}
+
 	// Prepare input (dmenu items)
 	for _, e := range listEntries {
 		input.WriteString(e.Title + "\n")
@@ -188,6 +205,7 @@ func PromptEntries(menu *Menu) (*Entry, ErrorPrompt) {
 		for _, e := range listEntries {
 			if e.Title == result {
 				entry = *e.Entry
+				lastSelectedEntryItem = e
 				break
 			}
 		}

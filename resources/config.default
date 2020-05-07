@@ -6,7 +6,7 @@ ClipboardTool = "xsel"
 ClipboardTimeout = 15
 NoCache = false
 CacheOneTime = false
-CacheTimeout = 3600
+CacheTimeout = 30
 ShowNotifications = true
 
 [style]
