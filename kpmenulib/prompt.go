@@ -30,7 +30,7 @@ type entryItem struct {
 }
 
 // After a value was selected, remember it and show it as
-// first entry next tim
+// first entry next time
 var lastSelectedEntryItem entryItem
 
 // ErrorPrompt is a structure that handle an error of dmenu/rofi
