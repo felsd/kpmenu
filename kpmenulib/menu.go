@@ -85,30 +85,32 @@ func (m *Menu) OpenDatabase() *ErrorDatabase {
 
 // OpenMenu executes dmenu to interface the user with the database
 func (m *Menu) OpenMenu() *ErrorDatabase {
-	return m.entrySelection()
-	// // Prompt for menu selection
-	// selectedMenu, err := PromptMenu(m)
-	// if err.Cancelled {
-	// 	if err.Error != nil {
-	// 		return NewErrorDatabase("failed to select menu item: %s", err.Error, false)
-	// 	}
-	// 	// Cancelled
-	// 	return NewErrorDatabase("", nil, false)
-	// }
-	// switch selectedMenu {
-	// case MenuShow:
-	// 	return m.entrySelection()
-	// case MenuReload:
-	// 	log.Printf("reloading database")
-	// 	if err := m.OpenDatabase(); err != nil {
-	// 		return err
-	// 	}
-	// 	return m.OpenMenu()
-	// case MenuExit:
-	// 	m.Database.Loaded = false
-	// 	return NewErrorDatabase("exiting", nil, true)
-	// }
-	// return nil
+	if m.Configuration.General.DoNotShowMenu {
+		return m.entrySelection()
+	}
+	// Prompt for menu selection
+	selectedMenu, err := PromptMenu(m)
+	if err.Cancelled {
+		if err.Error != nil {
+			return NewErrorDatabase("failed to select menu item: %s", err.Error, false)
+		}
+		// Cancelled
+		return NewErrorDatabase("", nil, false)
+	}
+	switch selectedMenu {
+	case MenuShow:
+		return m.entrySelection()
+	case MenuReload:
+		log.Printf("reloading database")
+		if err := m.OpenDatabase(); err != nil {
+			return err
+		}
+		return m.OpenMenu()
+	case MenuExit:
+		m.Database.Loaded = false
+		return NewErrorDatabase("exiting", nil, true)
+	}
+	return nil
 }
 
 func (m *Menu) entrySelection() *ErrorDatabase {

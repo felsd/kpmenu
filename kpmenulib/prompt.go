@@ -29,7 +29,7 @@ type entryItem struct {
 	Entry *Entry
 }
 
-// After a value was selected, remember it and show it as
+// After a entry was selected, remember it and show it as
 // first entry next time
 var lastSelectedEntryItem entryItem
 
@@ -74,53 +74,55 @@ func PromptPassword(menu *Menu) (string, ErrorPrompt) {
 // PromptMenu executes dmenu to ask for menu selection
 // Returns the MenuSelection chosen
 func PromptMenu(menu *Menu) (MenuSelection, ErrorPrompt) {
-	return 1, ErrorPrompt{
-		Cancelled: false,
-		Error: nil,
+	if menu.Configuration.General.DoNotShowMenu {
+		return 1, ErrorPrompt{
+			Cancelled: false,
+			Error: nil,
+		}
 	}
-	// var selection MenuSelection
-	// var input strings.Builder
+	var selection MenuSelection
+	var input strings.Builder
 
-	// // Prepare dmenu/rofi
-	// var command []string
-	// if menu.Configuration.General.UseRofi {
-	// 	command = []string{
-	// 		"rofi",
-	// 		"-i",
-	// 		"-dmenu",
-	// 		"-p", menu.Configuration.Style.TextMenu,
-	// 	}
-	// } else {
-	// 	command = []string{
-	// 		"dmenu",
-	// 		"-i",
-	// 		"-p", menu.Configuration.Style.TextMenu,
-	// 	}
-	// }
+	// Prepare dmenu/rofi
+	var command []string
+	if menu.Configuration.General.UseRofi {
+		command = []string{
+			"rofi",
+			"-i",
+			"-dmenu",
+			"-p", menu.Configuration.Style.TextMenu,
+		}
+	} else {
+		command = []string{
+			"dmenu",
+			"-i",
+			"-p", menu.Configuration.Style.TextMenu,
+		}
+	}
 
-	// // Add custom arguments
-	// if menu.Configuration.Style.ArgsMenu != "" {
-	// 	command = append(command, strings.Split(menu.Configuration.Style.ArgsMenu, "|")...)
-	// }
+	// Add custom arguments
+	if menu.Configuration.Style.ArgsMenu != "" {
+		command = append(command, strings.Split(menu.Configuration.Style.ArgsMenu, "|")...)
+	}
 
-	// // Prepare input (dmenu items)
-	// for _, e := range menuSelections {
-	// 	input.WriteString(e + "\n")
-	// }
+	// Prepare input (dmenu items)
+	for _, e := range menuSelections {
+		input.WriteString(e + "\n")
+	}
 
-	// // Execute prompt
-	// result, err := executePrompt(command, strings.NewReader(input.String()))
-	// if err.Error == nil && !err.Cancelled {
-	// 	// Get selected menu item
-	// 	for ind, sel := range menuSelections {
-	// 		// Match for entry title and selected entry
-	// 		if sel == result {
-	// 			selection = MenuSelection(ind)
-	// 			break
-	// 		}
-	// 	}
-	// }
-	// return selection, err
+	// Execute prompt
+	result, err := executePrompt(command, strings.NewReader(input.String()))
+	if err.Error == nil && !err.Cancelled {
+		// Get selected menu item
+		for ind, sel := range menuSelections {
+			// Match for entry title and selected entry
+			if sel == result {
+				selection = MenuSelection(ind)
+				break
+			}
+		}
+	}
+	return selection, err
 }
 
 // PromptEntries executes dmenu to ask for an entry selection

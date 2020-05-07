@@ -8,6 +8,7 @@ NoCache = false
 CacheOneTime = false
 CacheTimeout = 30
 ShowNotifications = true
+DoNotShowMenu = true
 
 [style]
 PasswordBackground = "black"
