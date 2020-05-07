@@ -10,6 +10,7 @@ CacheTimeout = 30
 ShowNotifications = true
 DoNotShowMenu = true
 RememberLastEntry = true
+ArgsSeparator = "|"
 
 [style]
 PasswordBackground = "black"

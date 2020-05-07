@@ -29,6 +29,7 @@ type ConfigurationGeneral struct {
 	ShowNotifications bool   // Flag for showing desktop notifications
 	DoNotShowMenu     bool   // Flag for skipping the menu selection
 	RememberLastEntry bool   // Remember last selected entry
+	ArgsSeparator     string // Separator char for custom args
 }
 
 // ConfigurationStyle is the sub-structure of the configuration related to style of dmenu
@@ -77,6 +78,7 @@ func NewConfiguration() *Configuration {
 			ShowNotifications: false,
 			DoNotShowMenu:     false,
 			RememberLastEntry: false,
+			ArgsSeparator:     " ",
 		},
 		Style: ConfigurationStyle{
 			PasswordBackground: "black",
@@ -136,6 +138,7 @@ func (c *Configuration) InitializeFlags() {
 	flag.BoolVar(&c.General.ShowNotifications, "showNotifications", c.General.ShowNotifications, "Show desktop notifications")
 	flag.BoolVar(&c.General.DoNotShowMenu, "doNotShowMenu", c.General.DoNotShowMenu, "Flag for skipping the menu selection")
 	flag.BoolVar(&c.General.RememberLastEntry, "rememberLastEntry", c.General.RememberLastEntry, "Remember last selected entry")
+	flag.StringVar(&c.General.ArgsSeparator, "argsSeparator", c.General.ArgsSeparator, "Separator char for custom args")
 
 	// Style
 	flag.StringVar(&c.Style.PasswordBackground, "passwordBackground", c.Style.PasswordBackground, "Color of dmenu background and text for password selection, used to hide password typing")
