@@ -8,13 +8,48 @@ Kpmenu is a tool written in Go used to view a KeePass database via a dmenu, or r
 *   Interfaced with dmenu or rofi
 *   Customize dmenu/rofi with additional command arguments
 *   Kpmenu can be started as a daemon, so you don't need to re-insert credentials
-    *   By default the first instance of kpmenu will enter in daemon mode (cache option) for 60 seconds
-    *   You can start a permanent daemon with `--daemon` option (it won't ask open the database)
-    *   Even if the cache times out, the daemon won't be killed
+    *   By default the first instance enters daemon mode with a sliding-window idle timeout (default 600 seconds)
+    *   Each successful access resets the idle timer; once idle for the timeout, the daemon exits cleanly and removes its socket
+    *   You can start a permanent daemon with `--daemon` option (no per-call timeout, exits only on signal)
 *   Automatically put selected value into the clipboard (for a custom time)
     *   xsel and wl-clipboard supported
     *   By default it will use xsel, you can override it via config or `--clipboardTool` option
     *   Hidden password typing
+
+## Security model
+
+The daemon's cached state contains the unlocked KeePass database. Several
+layers protect it:
+
+*   **Per-user UNIX domain socket** at `$XDG_RUNTIME_DIR/kpmenu.sock` (mode `0600`).
+    No TCP listener; nothing on the network can reach the daemon.
+*   **`SO_PEERCRED` peer-UID check** on every accepted connection. Connections
+    from any UID other than the server's own are refused and logged.
+*   **`PR_SET_DUMPABLE = 0`** at startup. A crash will not write a coredump
+    containing the unlocked database.
+*   **Sliding-window idle timeout** (default 600s, configurable via
+    `CacheTimeout`). Each successful access resets the timer; once idle, the
+    daemon exits and the next access requires the master password.
+*   **Clean shutdown on `SIGTERM`/`SIGINT`**. The signal handler closes the
+    listener and unlinks the socket file, so screen-lock or session-end
+    scripts can call `pkill -TERM kpmenu` to forget the unlocked state.
+
+### Limitations
+
+Kpmenu cannot defend against an attacker who already has code execution
+under the same user account. This is a fundamental limit of any
+process-resident password manager: the unlocked database lives in the
+daemon's heap, and a same-UID attacker can read it via `ptrace`, binary
+replacement, or simply by connecting to the socket. Mitigations live
+outside the daemon: short cache timeouts, prompt screen-lock, and not
+running untrusted code as your user.
+
+### `DoNotShowMenu`
+
+The `DoNotShowMenu` option skips the top-level Show/Reload/Exit choice
+and goes straight to the entry picker. The field picker still runs, so
+each lookup is still gated by an interactive selection. Only enable in
+trusted single-user contexts.
 
 ## Dependencies
 *   `dmenu` or `rofi`
@@ -48,14 +83,24 @@ cd kpmenu
 # Build
 make build
 
-# Install
+# Install system-wide (default: /usr)
 sudo make install
+
+# Or install to a user-local prefix (no sudo)
+make DESTDIR=$HOME/.local install
 ```
 
 ## Configuration
 You can set options via `config` or cli arguments.
 
-Kpmenu will check for `$HOME/.config/kpmenu/config`, you can copy the [default one](https://github.com/AlessioDP/kpmenu/blob/master/resources/config.default) with `cp ./resources/config.default $HOME/.config/kpmenu/config`.
+Kpmenu will check for `$HOME/.config/kpmenu/config`. You can start from either:
+
+*   `resources/config.default` — the original defaults shipped upstream.
+*   `resources/kpmenu.conf.example` — a security-recommended starting point (rofi + wl-clipboard + 600s sliding-window timeout).
+
+```bash
+cp resources/kpmenu.conf.example $HOME/.config/kpmenu/config
+```
 
 ## Options
 Options taken with `kpmenu --help`

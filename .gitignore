@@ -1,5 +1,12 @@
-# Ignore databases
+# Databases
 *.kdbx
 
-# Ignore kpmenu executable
+# Built binary
 kpmenu
+kpmenu.pre-hardening
+
+# Build artifacts
+dist/
+
+# Local config files (the example is *.example, not *.conf)
+*.conf

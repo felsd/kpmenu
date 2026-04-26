@@ -1,0 +1,42 @@
+# kpmenu.conf.example
+#
+# Copy to $HOME/.config/kpmenu/config and edit.
+# These defaults reflect the security-recommended configuration:
+#   - rofi (Wayland-capable) and wl-clipboard
+#   - 600-second sliding-window idle timeout
+#   - main menu always shown (DoNotShowMenu = false)
+#
+# See README "Security model" for the rationale.
+
+[general]
+UseRofi = true
+ClipboardTool = "wl-clipboard"   # use "xsel" on X11
+ClipboardTimeout = 15
+NoCache = false
+CacheOneTime = false
+# Sliding-window idle timeout. Each successful access resets the timer;
+# the daemon exits cleanly after this many seconds of inactivity.
+CacheTimeout = 600
+ShowNotifications = true
+# DoNotShowMenu skips only the top-level Show/Reload/Exit selection.
+# The field picker still runs, so every lookup is interactive.
+# Only enable in trusted single-user contexts.
+DoNotShowMenu = false
+RememberLastEntry = true
+ArgsSeparator = "|"
+
+[style]
+PasswordBackground = "black"
+TextPassword = "Enter password"
+TextMenu = "Select"
+TextEntry = "Entry"
+TextField = "Field"
+FormatEntry = "{Title} - {UserName}"
+
+[database]
+Database = "/path/to/your.kdbx"
+#KeyFile =
+#Password =
+FieldOrder = "Password UserName URL"
+FillOtherFields = true
+#FillBlacklist =
