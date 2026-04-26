@@ -30,6 +30,7 @@ type ConfigurationGeneral struct {
 	DoNotShowMenu     bool   // Flag for skipping the menu selection
 	RememberLastEntry bool   // Remember last selected entry
 	ArgsSeparator     string // Separator char for custom args
+	NoOTP             bool   // Disable OTP/TOTP handling
 }
 
 // ConfigurationStyle is the sub-structure of the configuration related to style of dmenu
@@ -139,6 +140,7 @@ func (c *Configuration) InitializeFlags() {
 	flag.BoolVar(&c.General.DoNotShowMenu, "doNotShowMenu", c.General.DoNotShowMenu, "Flag for skipping the menu selection")
 	flag.BoolVar(&c.General.RememberLastEntry, "rememberLastEntry", c.General.RememberLastEntry, "Remember last selected entry")
 	flag.StringVar(&c.General.ArgsSeparator, "argsSeparator", c.General.ArgsSeparator, "Separator char for custom args")
+	flag.BoolVar(&c.General.NoOTP, "nootp", c.General.NoOTP, "Disable OTP handling")
 
 	// Style
 	flag.StringVar(&c.Style.PasswordBackground, "passwordBackground", c.Style.PasswordBackground, "Color of dmenu background and text for password selection, used to hide password typing")

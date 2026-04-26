@@ -18,6 +18,7 @@ ShowNotifications = true
 DoNotShowMenu = true
 RememberLastEntry = true
 ArgsSeparator = "|"
+NoOTP = false
 
 [style]
 PasswordBackground = "black"

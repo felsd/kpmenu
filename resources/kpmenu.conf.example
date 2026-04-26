@@ -24,6 +24,10 @@ ShowNotifications = true
 DoNotShowMenu = false
 RememberLastEntry = true
 ArgsSeparator = "|"
+# NoOTP disables OTP/TOTP handling. Default false: entries with an OTP
+# field show "Generate OTP" in the field picker, which computes the
+# current 6-digit code from the stored secret.
+NoOTP = false
 
 [style]
 PasswordBackground = "black"
