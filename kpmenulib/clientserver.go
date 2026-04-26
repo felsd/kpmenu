@@ -180,9 +180,14 @@ func setupListener(m *Menu, handlePacket func(Packet) bool) error {
 	exit := false
 	for !exit {
 		if !m.Configuration.Flags.Daemon {
-			// If not a daemon prepare cache time
-			remainingCacheTime := m.Configuration.General.CacheTimeout - int(time.Now().Sub(m.CacheStart).Seconds())
-			unixListener.SetDeadline(time.Now().Add(time.Second * time.Duration(remainingCacheTime)))
+			// Sliding-window idle timeout. Each successful Accept resets the
+			// deadline to a fresh CacheTimeout from now, so as long as the
+			// user keeps accessing the database the daemon stays alive.
+			// CacheOneTime users (who explicitly want fixed expiry) can
+			// still get that — Show() leaves CacheStart untouched and the
+			// stale-database check in Show() forces a re-prompt on next
+			// access.
+			unixListener.SetDeadline(time.Now().Add(time.Second * time.Duration(m.Configuration.General.CacheTimeout)))
 		}
 
 		// Listen to calls

@@ -6,8 +6,15 @@ ClipboardTool = "xsel"
 ClipboardTimeout = 15
 NoCache = false
 CacheOneTime = false
-CacheTimeout = 30
+# CacheTimeout is a sliding-window idle timeout. Every successful access
+# resets the timer; the daemon exits and the master password is required
+# again after this many seconds of inactivity.
+CacheTimeout = 300
 ShowNotifications = true
+# DoNotShowMenu skips the top-level Show/Reload/Exit selection and goes
+# straight to the entry picker. The field picker (Password/UserName/URL)
+# always runs, so the user still confirms each lookup interactively.
+# Only safe in trusted single-user contexts.
 DoNotShowMenu = true
 RememberLastEntry = true
 ArgsSeparator = "|"

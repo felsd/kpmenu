@@ -74,7 +74,7 @@ func NewConfiguration() *Configuration {
 		General: ConfigurationGeneral{
 			ClipboardTool:     ClipboardToolXsel,
 			ClipboardTimeout:  15,
-			CacheTimeout:      60,
+			CacheTimeout:      600,
 			ShowNotifications: false,
 			DoNotShowMenu:     false,
 			RememberLastEntry: false,
