@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"time"
+
+	"golang.org/x/sys/unix"
 )
 
 // socketPath returns the per-user UNIX domain socket path used by both
@@ -28,6 +30,35 @@ func socketPath() (string, error) {
 		return "", fmt.Errorf("runtime dir %q not usable: %v", dir, err)
 	}
 	return filepath.Join(dir, "kpmenu.sock"), nil
+}
+
+// checkPeerUID verifies the connecting process runs under the same UID as
+// the server. Linux's SO_PEERCRED returns the credentials of the peer at
+// the moment of connect. Go's net.UnixConn does not expose the underlying
+// fd directly, so we go through SyscallConn().Control to call
+// getsockopt(2) inside a callback that has the fd in scope.
+func checkPeerUID(conn *net.UnixConn) error {
+	raw, err := conn.SyscallConn()
+	if err != nil {
+		return fmt.Errorf("syscall conn: %v", err)
+	}
+
+	var cred *unix.Ucred
+	var credErr error
+	if err := raw.Control(func(fd uintptr) {
+		cred, credErr = unix.GetsockoptUcred(int(fd), unix.SOL_SOCKET, unix.SO_PEERCRED)
+	}); err != nil {
+		return fmt.Errorf("control fd: %v", err)
+	}
+	if credErr != nil {
+		return fmt.Errorf("getsockopt SO_PEERCRED: %v", credErr)
+	}
+
+	if cred.Uid != uint32(os.Getuid()) {
+		return fmt.Errorf("peer uid=%d pid=%d does not match server uid=%d",
+			cred.Uid, cred.Pid, os.Getuid())
+	}
+	return nil
 }
 
 // Packet is the data sent by the client to the server listener
@@ -135,7 +166,7 @@ func setupListener(m *Menu, handlePacket func(Packet) bool) error {
 		}
 
 		// Listen to calls
-		conn, err := listener.Accept()
+		conn, err := unixListener.AcceptUnix()
 		if err != nil {
 			netErr := err.(*net.OpError)
 			if netErr.Timeout() {
@@ -143,6 +174,16 @@ func setupListener(m *Menu, handlePacket func(Packet) bool) error {
 				return nil
 			}
 			return err
+		}
+
+		// Reject connections from any UID other than the server's own.
+		// This is belt-and-braces with the 0600 file mode but defends
+		// against future weakening of $XDG_RUNTIME_DIR permissions or
+		// fd-passing that might bypass the fs check.
+		if err := checkPeerUID(conn); err != nil {
+			log.Printf("refusing connection: %v", err)
+			conn.Close()
+			continue
 		}
 		defer conn.Close()
 
