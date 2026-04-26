@@ -210,39 +210,45 @@ func setupListener(m *Menu, handlePacket func(Packet) bool) error {
 			conn.Close()
 			continue
 		}
-		defer conn.Close()
 
-		// Go routine to handle input
-		ch := make(chan Packet)
-		errCh := make(chan error)
-		go func(ch chan Packet, errCh chan error) {
-			dec := gob.NewDecoder(conn)
-			var packet Packet
-			err := dec.Decode(&packet)
-			if err != nil {
-				if err != io.EOF {
-					errCh <- err
-				} else {
-					return
+		// Per-iteration close. The original code used `defer conn.Close()`
+		// inside the loop, which deferred until setupListener returned —
+		// fds piled up across the daemon's lifetime. Wrapping the work in
+		// an IIFE with its own defer makes the close deterministic.
+		var loopErr error
+		func() {
+			defer conn.Close()
+
+			ch := make(chan Packet)
+			errCh := make(chan error)
+			go func(ch chan Packet, errCh chan error) {
+				dec := gob.NewDecoder(conn)
+				var packet Packet
+				err := dec.Decode(&packet)
+				if err != nil {
+					if err != io.EOF {
+						errCh <- err
+					} else {
+						return
+					}
 				}
-			}
-			ch <- packet
-		}(ch, errCh)
+				ch <- packet
+			}(ch, errCh)
 
-		// Handle received input
-		timeout := time.Tick(3 * time.Second) // Timeout of 3 seconds - to avoid problems
-		select {
-		case packet := <-ch:
-			// Received the data
-			fatal := handlePacket(packet)
-			exit = (fatal && !m.Configuration.Flags.Daemon)
-			break
-		case err := <-errCh:
-			// Received an error
-			return err
-		case <-timeout:
-			// Timed out
-			log.Printf("received request is timed out")
+			timeout := time.Tick(3 * time.Second) // Timeout of 3 seconds - to avoid problems
+			select {
+			case packet := <-ch:
+				fatal := handlePacket(packet)
+				exit = (fatal && !m.Configuration.Flags.Daemon)
+			case err := <-errCh:
+				loopErr = err
+			case <-timeout:
+				log.Printf("received request is timed out")
+			}
+		}()
+
+		if loopErr != nil {
+			return loopErr
 		}
 	}
 
