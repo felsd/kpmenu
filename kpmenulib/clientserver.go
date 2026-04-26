@@ -8,8 +8,10 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strconv"
+	"syscall"
 	"time"
 
 	"golang.org/x/sys/unix"
@@ -30,6 +32,22 @@ func socketPath() (string, error) {
 		return "", fmt.Errorf("runtime dir %q not usable: %v", dir, err)
 	}
 	return filepath.Join(dir, "kpmenu.sock"), nil
+}
+
+// installSignalHandler arranges for the daemon to exit cleanly on SIGTERM
+// or SIGINT, unlinking the socket file so the next start does not have to
+// dial-probe a stale path. Without this, an external `pkill kpmenu` (e.g.
+// from a screen-lock hook) would leave a socket corpse behind.
+func installSignalHandler(listener net.Listener, path string) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
+	go func() {
+		s := <-c
+		log.Printf("received %s, shutting down", s)
+		listener.Close()
+		os.Remove(path)
+		os.Exit(0)
+	}()
 }
 
 // checkPeerUID verifies the connecting process runs under the same UID as
@@ -156,6 +174,8 @@ func setupListener(m *Menu, handlePacket func(Packet) bool) error {
 	if err := os.Chmod(path, 0o600); err != nil {
 		return fmt.Errorf("failed to chmod socket %q: %v", path, err)
 	}
+
+	installSignalHandler(unixListener, path)
 
 	exit := false
 	for !exit {
