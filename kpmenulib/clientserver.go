@@ -2,29 +2,49 @@ package kpmenulib
 
 import (
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 )
+
+// socketPath returns the per-user UNIX domain socket path used by both
+// client and server. It prefers $XDG_RUNTIME_DIR (typically /run/user/<uid>,
+// mode 0700, root-owned) and falls back to /run/user/<uid> by direct lookup
+// when the variable is unset (e.g. some sudo contexts). If neither resolves
+// to a usable directory the caller gets an explicit error rather than a
+// silent /tmp fallback, which would be world-writable.
+func socketPath() (string, error) {
+	dir := os.Getenv("XDG_RUNTIME_DIR")
+	if dir == "" {
+		dir = filepath.Join("/run/user", strconv.Itoa(os.Getuid()))
+	}
+	if info, err := os.Stat(dir); err != nil || !info.IsDir() {
+		return "", fmt.Errorf("runtime dir %q not usable: %v", dir, err)
+	}
+	return filepath.Join(dir, "kpmenu.sock"), nil
+}
 
 // Packet is the data sent by the client to the server listener
 type Packet struct {
 	CliArguments []string
 }
 
-// StartClient sends a packet to the server listener
+// StartClient sends a packet to the server listener over the per-user UNIX
+// socket. A connect failure (no daemon running, stale socket) is the normal
+// signal for the caller to fall back to StartServer.
 func StartClient() error {
-	port, err := getPort()
+	path, err := socketPath()
 	if err != nil {
 		return err
 	}
 
-	conn, err := net.Dial("tcp", "localhost:"+port)
+	conn, err := net.Dial("unix", path)
 	if err != nil {
 		return err
 	}
@@ -70,20 +90,40 @@ func StartServer(m *Menu) (err error) {
 }
 
 func setupListener(m *Menu, handlePacket func(Packet) bool) error {
-	// Listen for client calls
-	listener, err := net.Listen("tcp", ":0")
+	path, err := socketPath()
 	if err != nil {
 		return err
 	}
-	tcpListener := listener.(*net.TCPListener)
-	defer tcpListener.Close()
 
-	// Get used port
-	_, port, _ := net.SplitHostPort(listener.Addr().String())
+	// Stale-socket recovery: if a socket file exists, dial it. A successful
+	// dial means another daemon is alive — refuse to clobber it. A failed
+	// dial means the file is a corpse from a prior crash, so unlink and
+	// proceed. There is a small TOCTOU between this probe and Listen; if
+	// another daemon wins the race net.Listen will return EADDRINUSE which
+	// the caller surfaces.
+	if _, statErr := os.Stat(path); statErr == nil {
+		if conn, dialErr := net.Dial("unix", path); dialErr == nil {
+			conn.Close()
+			return errors.New("another kpmenu daemon is already listening on " + path)
+		}
+		if err := os.Remove(path); err != nil {
+			return fmt.Errorf("failed to remove stale socket %q: %v", path, err)
+		}
+	}
 
-	// Save port
-	if err := savePort(port); err != nil {
+	listener, err := net.Listen("unix", path)
+	if err != nil {
 		return err
+	}
+	unixListener := listener.(*net.UnixListener)
+	defer unixListener.Close()
+	defer os.Remove(path)
+
+	// Defense-in-depth: $XDG_RUNTIME_DIR is itself 0700 root-owned in
+	// systemd setups, but explicitly chmod the socket inode to 0600 so
+	// the permission is on-record even if the parent dir is misconfigured.
+	if err := os.Chmod(path, 0o600); err != nil {
+		return fmt.Errorf("failed to chmod socket %q: %v", path, err)
 	}
 
 	exit := false
@@ -91,7 +131,7 @@ func setupListener(m *Menu, handlePacket func(Packet) bool) error {
 		if !m.Configuration.Flags.Daemon {
 			// If not a daemon prepare cache time
 			remainingCacheTime := m.Configuration.General.CacheTimeout - int(time.Now().Sub(m.CacheStart).Seconds())
-			tcpListener.SetDeadline(time.Now().Add(time.Second * time.Duration(remainingCacheTime)))
+			unixListener.SetDeadline(time.Now().Add(time.Second * time.Duration(remainingCacheTime)))
 		}
 
 		// Listen to calls
@@ -143,27 +183,3 @@ func setupListener(m *Menu, handlePacket func(Packet) bool) error {
 	return nil
 }
 
-func makeCacheFolder() error {
-	if err := os.MkdirAll(filepath.Join(os.Getenv("HOME"), ".cache/kpmenu/"), 0755); err != nil {
-		return fmt.Errorf("failed to make cache folder: %v", err)
-	}
-	return nil
-}
-
-func savePort(port string) (err error) {
-	if err = makeCacheFolder(); err == nil {
-		if err = ioutil.WriteFile(
-			filepath.Join(os.Getenv("HOME"), ".cache/kpmenu/server.port"),
-			[]byte(port),
-			0644,
-		); err != nil {
-			return fmt.Errorf("failed to make server port cache file: %v", err)
-		}
-	}
-	return err
-}
-
-func getPort() (string, error) {
-	data, err := ioutil.ReadFile(filepath.Join(os.Getenv("HOME"), ".cache/kpmenu/server.port"))
-	return string(data), err
-}
